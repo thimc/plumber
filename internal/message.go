@@ -22,6 +22,11 @@ type Message struct {
 	Data []byte // the data itself
 }
 
+func (m *Message) String() string {
+	return fmt.Sprintf("src=%q dst=%q wdir=%q type=%q attr=%q data=%q",
+		m.Src, m.Dst, m.Wdir, m.Type, m.Attr, m.Data)
+}
+
 func (m *Message) Encode(w io.Writer) error {
 	var b bytes.Buffer
 	b.WriteString(m.Src + "\n")
@@ -31,12 +36,12 @@ func (m *Message) Encode(w io.Writer) error {
 	i := 0
 	for a, v := range m.Attr {
 		fmt.Fprintf(&b, "%s='%s'", a, v)
+		i++
 		if i < len(m.Attr) {
 			fmt.Fprint(&b, " ")
 		} else {
 			fmt.Fprint(&b, "\n")
 		}
-		i++
 	}
 	if len(m.Attr) == 0 {
 		fmt.Fprint(&b, "\n")
@@ -48,39 +53,34 @@ func (m *Message) Encode(w io.Writer) error {
 	//return gob.NewEncoder(w).Encode(m)
 }
 
+func readLine(r *bufio.Reader) (string, error) {
+	ln, err := r.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	return strings.Trim(ln, "\n"), nil
+}
+
 func (m *Message) Decode(r io.Reader) error {
 	var (
-		err      error
-		br       = bufio.NewReader(r)
-		readLine = func() (string, error) {
-			ln, err := br.ReadString('\n')
-			if err != nil {
-				return "", err
-			}
-			return strings.Trim(ln, "\n"), nil
-		}
+		err error
+		br  = bufio.NewReader(r)
 	)
-
-	m.Src, err = readLine()
-	if err != nil {
+	if m.Src, err = readLine(br); err != nil {
 		return err
 	}
-	m.Dst, err = readLine()
-	if err != nil {
+	if m.Dst, err = readLine(br); err != nil {
 		return err
 	}
-	m.Wdir, err = readLine()
-	if err != nil {
+	if m.Wdir, err = readLine(br); err != nil {
 		return err
 	}
-	m.Type, err = readLine()
-	if err != nil {
+	if m.Type, err = readLine(br); err != nil {
 		return err
 	}
-	// Attributes
 	m.Attr = make(map[string]string)
 	for {
-		ln, err := readLine()
+		ln, err := readLine(br)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func (m *Message) Decode(r io.Reader) error {
 		}
 		m.Attr[fields[0]] = strings.Join(fields[1:], "=")
 	}
-	ndata, err := readLine()
+	ndata, err := readLine(br)
 	if err != nil {
 		return err
 	}
