@@ -277,7 +277,7 @@ func main() {
 			log.Printf("decode %+v: %q", string(b.Bytes()), err)
 			continue
 		}
-		log.Printf("received %d bytes: %q", n, string(b.Bytes()))
+		log.Printf("received %s", msg.String())
 		go process(msg, *rulesfile)
 	}
 
