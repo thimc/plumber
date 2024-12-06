@@ -1,6 +1,7 @@
-# Rules are evaluated from top to down, the first one to match all patterns
-# wins. Rule sets needs to be separated with a space. Comments are not a
-# valid delimiter. A line starting with a # is a comment and is ignored.
+# Rules are evaluated from top to bottom, the first one to match all
+# patterns wins. Rule sets needs to be separated with a empty line.
+# A line starting with a # is a comment and is ignored.
+# Comments are not a valid delimiter for separating rules.
 
 # Man pages in zathura
 type	is	text
