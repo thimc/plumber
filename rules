@@ -1,0 +1,42 @@
+# Rules are evaluated from top to down, the first one to match all patterns
+# wins. Rule sets needs to be separated with a space. Comments are not a
+# valid delimiter. A line starting with a # is a comment and is ignored.
+
+# Man pages in zathura
+type	is	text
+data	matches	'(.*)\(([0-9])\)'
+plumb	start	man -Tpdf $1 $2 | zathura -
+
+# Documents go to zathura
+type	is	text
+data	matches	'.*.(pdf|eps|ps|epub)$'
+arg	isfile	$0
+plumb	start	zathura "$file"
+
+# Images to nsxiv
+type	is	text
+data	matches	'.*.(png|png|jpe?g|JPE?G|gif)$'
+arg	isfile	$0
+plumb	start	nsxiv "$file"
+
+# Videos to mpv
+type	is	text
+data	matches	'.*.(mp4|webm|ogv|ogg|opus|mpg|mpeg|mov|flac|wav|mp3|mkv|av)$'
+arg	isfile	$0
+plumb	start	mpv "$file"
+
+# YouTube videos play in mpv
+type	is	text
+data	matches	'y(ew|ou)tu\.?be(\.com)'
+plumb	start	mpv "ytdl://$data"
+
+# URLs go to web browser
+type	is	text
+data	matches	'^https?://[a-zA-Z0-9@\/\.\-_]+'
+plumb	start	firefox "$data"
+
+
+# Catch all rule; regular files gets opened in the text editor
+type	is	text
+data	isfile	$data
+plumb	start	xterm -e vim "$file"
