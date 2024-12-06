@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 	"syscall"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -96,11 +97,13 @@ func (p *Pattern) Evaluate(r *Ruleset) (err error) {
 		switch p.Verb {
 		case VerbStart:
 			cmd := exec.Command(internal.DefaultShell, internal.DefaultShellArg, p.Arg)
+			cmd.Env = os.Environ()
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			cmd.Dir = r.Variables["wdir"]
 			if err = cmd.Start(); err != nil {
 				return err
 			}
+			log.Println(cmd)
 			return cmd.Process.Release()
 		case VerbTo:
 			f, err := os.OpenFile(p.Arg, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -259,19 +262,22 @@ func main() {
 	}
 	defer send.Close()
 	for {
-		buf, err := io.ReadAll(send)
+		var b bytes.Buffer
+		n, err := io.Copy(&b, send)
 		if err != nil {
-			log.Println("read:", err)
+			log.Println("copy:", err)
 			continue
 		}
-		if len(buf) == 0 {
+		if n == 0 {
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 		var msg internal.Message
-		if err := msg.Decode(bytes.NewReader(buf)); err != nil {
-			log.Printf("decode %+v: %q", string(buf), err)
+		if err := msg.Decode(&b); err != nil {
+			log.Printf("decode %+v: %q", string(b.Bytes()), err)
 			continue
 		}
+		log.Printf("received %d bytes: %q", n, string(b.Bytes()))
 		go process(msg, *rulesfile)
 	}
 
