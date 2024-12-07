@@ -53,15 +53,6 @@ var verbs = map[string]VerbType{
 	"to":      7,
 }
 
-func (v VerbType) String() string {
-	for k, vt := range verbs {
-		if v == vt {
-			return k
-		}
-	}
-	return "?"
-}
-
 type Ruleset struct {
 	Patterns  []Pattern
 	Variables map[string]string
