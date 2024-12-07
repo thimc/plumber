@@ -4,6 +4,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -249,7 +250,7 @@ func main() {
 		defer logf.Close()
 		log.SetOutput(logf)
 	}
-	if _, err := os.Stat(*sendfile); err == os.ErrNotExist {
+	if _, err := os.Stat(*sendfile); errors.Is(err, os.ErrNotExist) {
 		if err := syscall.Mkfifo(*sendfile, 0644); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
