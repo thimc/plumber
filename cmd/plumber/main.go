@@ -97,7 +97,11 @@ func (p *Pattern) Evaluate(r *Ruleset) (err error) {
 	if p.Object == "plumb" {
 		switch p.Verb {
 		case VerbStart:
-			cmd := exec.Command(internal.DefaultShell, internal.DefaultShellArg, p.Arg)
+			shargs := strings.Fields(internal.DefaultShell)
+			if sh, ok := r.Variables["shell"]; ok {
+				shargs = strings.Fields(sh)
+			}
+			cmd := exec.Command(shargs[0], shargs[1], p.Arg)
 			cmd.Env = os.Environ()
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			cmd.Dir = r.Variables["wdir"]

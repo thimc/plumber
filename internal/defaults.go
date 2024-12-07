@@ -8,10 +8,9 @@ import (
 )
 
 const (
-	DefaultEnvVar   = "PLUMBERD"
-	DefaultDir      = "/mnt/plumb"
-	DefaultShell    = "/bin/sh"
-	DefaultShellArg = "-c"
+	DefaultEnvVar = "PLUMBERD"
+	DefaultDir    = "/mnt/plumb"
+	DefaultShell  = "/bin/sh -c"
 )
 
 // Defaults reads the value of the OS environment variable [DefaultEnvVar]

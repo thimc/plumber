@@ -1,7 +1,14 @@
 # Rules are evaluated from top to bottom, the first one to match all
-# patterns wins. Rule sets needs to be separated with a empty line.
-# A line starting with a # is a comment and is ignored.
-# Comments are not a valid delimiter for separating rules.
+# patterns wins. Rule sets needs to be separated with an empty line or a
+# comment.  A line starting with a # is a comment and is ignored.
+#
+# The global shell variable below can be omitted in which case the
+# default value is set to '/bin/sh -c'.  It is used by the "start" verb
+# to spawn processes, and can be overridden. It expects a full path to
+# the executable and exactly one flag for specifying which commands to
+# be executed.
+#
+shell='/bin/sh -c'
 
 # Man pages in zathura
 type	is	text
@@ -35,7 +42,6 @@ plumb	start	mpv "ytdl://$data"
 type	is	text
 data	matches	'^https?://[a-zA-Z0-9@\/\.\-_]+'
 plumb	start	firefox "$data"
-
 
 # Catch all rule; regular files gets opened in the text editor
 type	is	text
