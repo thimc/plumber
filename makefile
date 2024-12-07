@@ -15,7 +15,7 @@ rules:
 	@if test ! -d $(DIR); then \
 		mkdir -p $(DIR);   \
 	fi
-	cp rules /mnt/plumb/rules
+	cp rules $(DIR)/rules
 
 clean:
 	@rm plumb plumber
