@@ -15,6 +15,8 @@ Yet another plumber tool for Unix.
 
 ## Todo
 
+* The `attr` field is unused.
+
 Write man pages for:
 
  * plumb(1) - tool to interface with the plumber(1) daemon
