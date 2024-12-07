@@ -313,7 +313,7 @@ func process(msg internal.Message, rulefile string) {
 	)
 	for s.Scan() || capture {
 		line := s.Text()
-		if len(line) == 0 {
+		if len(line) == 0 || strings.HasPrefix(line, "#") {
 			if len(rule.Patterns) == 0 {
 				continue
 			}
@@ -327,8 +327,6 @@ func process(msg internal.Message, rulefile string) {
 				continue
 			}
 			return
-		} else if strings.HasPrefix(line, "#") {
-			continue
 		} else if strings.Contains(line, "=") {
 			parts := strings.Split(line, "=")
 			if len(parts) < 1 {
