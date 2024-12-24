@@ -60,8 +60,7 @@ type Ruleset struct {
 
 func (r *Ruleset) Evaluate() error {
 	for _, p := range r.Patterns {
-		err := p.Evaluate(r)
-		if err != nil {
+		if err := p.Evaluate(r); err != nil {
 			return err
 		}
 	}
@@ -76,12 +75,13 @@ type Pattern struct {
 	Arg    string   // Arg is the data the Object should be compared with
 }
 
+var objects = []string{"attr", "arg", "data", "dst", "plumb", "src", "type", "wdir"}
+
 func (p *Pattern) Evaluate(r *Ruleset) (err error) {
-	if !slices.Contains([]string{"arg", "data", "dst", "plumb", "src", "type", "wdir"}, p.Object) {
+	if !slices.Contains(objects, p.Object) {
 		return fmt.Errorf("invalid object: %+v", p)
 	}
-	p.Arg, err = r.Expand(p.Arg)
-	if err != nil {
+	if p.Arg, err = r.Expand(p.Arg); err != nil {
 		return err
 	}
 
@@ -99,7 +99,6 @@ func (p *Pattern) Evaluate(r *Ruleset) (err error) {
 			if err = cmd.Start(); err != nil {
 				return err
 			}
-			log.Println(cmd)
 			return cmd.Process.Release()
 		case VerbTo:
 			f, err := os.OpenFile(p.Arg, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -110,6 +109,9 @@ func (p *Pattern) Evaluate(r *Ruleset) (err error) {
 			data, ok := r.Variables["arg"]
 			if !ok {
 				return fmt.Errorf("missing data: %+v", r)
+			}
+			if !strings.HasSuffix(data, "\n") {
+				data += "\n"
 			}
 			if _, err = f.WriteString(data); err != nil {
 				return err
@@ -219,7 +221,9 @@ func (r *Ruleset) Expand(s string) (string, error) {
 			i = j
 			data, ok := r.Variables[buf]
 			if !ok {
-				return "", fmt.Errorf("unknown variable: %q", buf)
+				if data = os.Getenv(buf); data == "" {
+					return "", fmt.Errorf("unknown variable: %q", buf)
+				}
 			}
 			sb.WriteString(data)
 			buf = ""
@@ -289,6 +293,7 @@ func process(msg internal.Message, rulefile string) {
 			"wdir": msg.Wdir,
 			"file": "",
 			"dir":  "",
+			"attr": "",
 		}}
 	f, err := os.Open(rulefile)
 	if err != nil {
@@ -308,7 +313,7 @@ func process(msg internal.Message, rulefile string) {
 			if len(rule.Patterns) == 0 {
 				continue
 			}
-			if err := rule.Evaluate(); err != nil {
+			if err = rule.Evaluate(); err != nil {
 				if err != errNoMatch {
 					log.Println(err)
 					return
@@ -317,8 +322,9 @@ func process(msg internal.Message, rulefile string) {
 				rule = base
 				continue
 			}
-			return
-		} else if strings.Contains(line, "=") {
+			break
+		} else if strings.Contains(line, "=") && !contains(objects, line) {
+			log.Printf("Assignment: %q", line)
 			parts := strings.Split(line, "=")
 			if len(parts) < 1 {
 				log.Printf("invalid assignment: %q", line)
@@ -331,7 +337,6 @@ func process(msg internal.Message, rulefile string) {
 				continue
 			}
 			rule.Variables[name] = value
-			log.Printf("%q = %q", name, value)
 			continue
 		}
 		fields := strings.Fields(line)
@@ -361,7 +366,17 @@ func process(msg internal.Message, rulefile string) {
 	}
 	if s.Err() != nil {
 		log.Println(s.Err())
-		return
 	}
-	log.Println("no matching rule")
+	if err == errNoMatch {
+		log.Println("no matching rule")
+	}
+}
+
+func contains(a []string, b string) bool {
+	for _, v := range a {
+		if strings.Contains(b, v) {
+			return true
+		}
+	}
+	return false
 }
