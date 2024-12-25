@@ -13,6 +13,13 @@ Yet another plumber tool for Unix.
 
 	$ plumb 'https://google.com'
 
+## Updating the rule set
+
+Edit the rules file directly (defaults to `/mnt/plumb/rules`) or modify
+the file in the repository and run `make rules`. The rules file is read
+every time a new plumb message is received, so there is no need for
+restarting the plumber after modifying the file.
+
 ## Todo
 
 * The `attr` field is unused.
