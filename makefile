@@ -8,7 +8,10 @@ plumb: cmd/plumb/main.go
 plumber: cmd/plumber/main.go
 	go build -o plumber cmd/plumber/main.go
 
-install: rules plumb plumber
+install: plumb plumber
+	@if test ! -f $(DIR)/rules; then \
+		make rules; \
+	fi
 	cp plumb plumber $(HOME)/bin/
 
 rules:
