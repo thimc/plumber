@@ -99,6 +99,7 @@ func (p *Pattern) Evaluate(r *Ruleset) (err error) {
 			if err = cmd.Start(); err != nil {
 				return err
 			}
+			log.Println(cmd)
 			return cmd.Process.Release()
 		case VerbTo:
 			f, err := os.OpenFile(p.Arg, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -255,6 +256,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	log.Println("started")
 	send, err := os.OpenFile(*sendfile, os.O_RDONLY, os.ModeNamedPipe)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -309,7 +311,7 @@ func process(msg internal.Message, rulefile string) {
 	)
 	for s.Scan() || capture {
 		line := s.Text()
-		if len(line) == 0 || strings.HasPrefix(line, "#") {
+		if len(line) == 0 {
 			if len(rule.Patterns) == 0 {
 				continue
 			}
@@ -323,8 +325,9 @@ func process(msg internal.Message, rulefile string) {
 				continue
 			}
 			break
+		} else if strings.HasPrefix(line, "#") {
+			continue
 		} else if strings.Contains(line, "=") && !contains(objects, line) {
-			log.Printf("Assignment: %q", line)
 			parts := strings.Split(line, "=")
 			if len(parts) < 1 {
 				log.Printf("invalid assignment: %q", line)
