@@ -92,10 +92,11 @@ func (p *Pattern) Evaluate(r *Ruleset) (err error) {
 			if sh, ok := r.Variables["shell"]; ok {
 				shargs = strings.Fields(sh)
 			}
-			cmd := exec.Command(shargs[0], shargs[1], p.Arg)
+			cmd := exec.Command(shargs[0], strings.Join(shargs[1:], " "), p.Arg)
 			cmd.Env = os.Environ()
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			cmd.Dir = r.Variables["wdir"]
+			cmd.Stderr = log.Writer()
 			if err = cmd.Start(); err != nil {
 				return err
 			}
@@ -141,14 +142,15 @@ func (p *Pattern) Evaluate(r *Ruleset) (err error) {
 			p.Arg = filepath.Join(wdir, p.Arg)
 		}
 		p.Arg = filepath.Clean(p.Arg)
-		fi, err := os.Stat(p.Arg)
+		fi, err := os.Lstat(p.Arg)
 		if err != nil {
 			return err
 		}
-		if p.Verb == VerbIsDir && fi.Mode().IsDir() {
+		isdir := fi.Mode().IsDir()
+		if p.Verb == VerbIsDir && isdir {
 			r.Variables["dir"] = p.Arg
 			return nil
-		} else if p.Verb == VerbIsFile && fi.Mode().IsRegular() {
+		} else if p.Verb == VerbIsFile && !isdir {
 			r.Variables["file"] = p.Arg
 			return nil
 		}
@@ -250,7 +252,7 @@ func main() {
 		defer logf.Close()
 		log.SetOutput(logf)
 	}
-	if _, err := os.Stat(*sendfile); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Lstat(*sendfile); errors.Is(err, os.ErrNotExist) {
 		if err := syscall.Mkfifo(*sendfile, 0644); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -271,7 +273,7 @@ func main() {
 			continue
 		}
 		if n == 0 {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(50 * time.Microsecond)
 			continue
 		}
 		var msg internal.Message
